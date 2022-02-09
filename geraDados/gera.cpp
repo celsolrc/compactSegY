@@ -4,7 +4,8 @@
 
 #include "../segUtils/segUtils.h"
 
-#define D_VECTSIZE 10
+#define D_BLOCOS 1024
+#define D_VECTSIZE 1024*1024
 #define D_FILENAME_ORIG "ibmfloatdata.bin"
 
 using std::cout; using std::endl;
@@ -17,42 +18,51 @@ int main()
 	newData = (float*)malloc(D_VECTSIZE * sizeof(float));
 	dest = (float*)malloc(D_VECTSIZE * sizeof(float));
 
+	if ( (newData == NULL) || (dest == NULL) ) {
+		printf("Erro de alocacao de memoria\n");
+		return 1;
+	}
+
 	float valorProc = (float) ( rand() % 100000);
 	float valInc = 0;
 
-	// Gerando os numeros
-
-	cout << "Gerando" << endl;
-	for (int i = 0; i < D_VECTSIZE;)
-	{
-		valInc = (float) ( ((float) (rand() % 1000) - 500.0) /1000.0);
-
-		valorProc += valInc;
-
-		newData[i] = valorProc;
-
-		++i;
-	}
-
-	//	convertendo
-	cout << "Convertendo para IBM" << endl;
-	float_to_ibm((int*)newData, (int*)dest, D_VECTSIZE, 1);
-
-	//	gravando
-
-//#define D_DATA_IBM 0
-//#define D_DATA_RESTRUCT 1
-
 	ST_CabData cabFile;
 
-	cabFile.size = D_VECTSIZE;
+	cabFile.size = D_VECTSIZE * D_BLOCOS;
 	cabFile.type = D_DATA_IBM;
-
-	cout << "Gravando" << endl;
 	FILE* fp;
 	fopen_s(&fp, D_FILENAME_ORIG, "ab+");
 	fwrite((void*)&cabFile, 1, sizeof(cabFile), fp);
-	fwrite(dest, sizeof(float), D_VECTSIZE, fp);
+
+	for (long j = 0; j < D_BLOCOS; ++j)
+	{
+
+		// Gerando os numeros
+
+		cout << "Gerando" << endl;
+		for (long i = 0; i < D_VECTSIZE; ++i)
+		{
+			valInc = (float)(((float)(rand() % 1000) - 500.0) / 1000.0);
+
+			valorProc += valInc;
+
+			newData[i] = valorProc;
+
+		}
+
+		//	convertendo
+		cout << "Convertendo para IBM" << endl;
+		float_to_ibm((int*)newData, (int*)dest, D_VECTSIZE, 1);
+
+		//	gravando
+
+	//#define D_DATA_IBM 0
+	//#define D_DATA_RESTRUCT 1
+
+
+		cout << "Gravando" << endl;
+		fwrite(dest, sizeof(float), D_VECTSIZE, fp);
+	}
 	fclose(fp);
 
 	cout << "ok" << endl;
